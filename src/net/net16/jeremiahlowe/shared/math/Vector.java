@@ -153,4 +153,16 @@ public class Vector {
 		}
 		return new Vector(x, y, z);
 	}
+	public Vector rotate(float a) {
+		float nx = x * (float)Math.cos(a) - y * (float)Math.sin(a);
+		float ny = x * (float)Math.sin(a) + y * (float)Math.cos(a);
+		this.x = nx; this.y = ny;
+		return this;
+	}
+	public float atan2() {
+		return (float)Math.atan2(y, x);
+	}
+	public static Vector fromAngle(float a) {
+		return new Vector((float)Math.cos(a), (float)Math.sin(a));
+	}
 }

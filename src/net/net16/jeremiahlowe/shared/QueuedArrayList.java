@@ -5,14 +5,14 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 
-public class SafeArrayList<T> implements Iterable<T> {
+public class QueuedArrayList<T> implements Iterable<T> {
 	private ArrayList<T> base, toRemove, toAdd;
 	private Comparator<T> sorter;
 
-	public SafeArrayList() {
+	public QueuedArrayList() {
 		this(null);
 	}
-	public SafeArrayList(Comparator<T> sorter) {
+	public QueuedArrayList(Comparator<T> sorter) {
 		base = new ArrayList<T>();
 		toRemove = new ArrayList<T>();
 		toAdd = new ArrayList<T>();
