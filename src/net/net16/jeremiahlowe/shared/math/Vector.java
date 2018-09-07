@@ -3,6 +3,9 @@ package net.net16.jeremiahlowe.shared.math;
 public class Vector {
 	public float x, y, z;
 	
+	public Vector(Vector v) {
+		this(v.x, v.y, v.z);
+	}
 	public Vector(float x, float y, float z) {
 		this.x = x;
 		this.y = y;
@@ -164,5 +167,26 @@ public class Vector {
 	}
 	public static Vector fromAngle(float a) {
 		return new Vector((float)Math.cos(a), (float)Math.sin(a));
+	}
+	public int getXInt() {
+		return (int) x;
+	}
+	public int getYInt() {
+		return (int) y;
+	}
+	public int getZInt() {
+		return (int) z;
+	}
+	public Vector negate() {
+		x *= -1;
+		y *= -1;
+		z *= -1;
+		return this;
+	}
+	public Vector translate(Vector by) {
+		x += by.x;
+		y += by.y;
+		z += by.z;
+		return this;
 	}
 }

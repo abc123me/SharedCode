@@ -49,4 +49,15 @@ public class TextUtility {
 		for(char c : chars) if(c == regex) ocurrences++;
 		return ocurrences;
 	}
+	public static String numberToString(double num, int digits){
+		if(digits < 0) throw new RuntimeException("Digits must be >= 0!");
+		String[] parts = String.valueOf(num).split("[.]");
+		if(parts[1].matches("0")) return parts[0];
+		if(parts[1].length() > digits){
+			String end = parts[1].substring(0, digits);
+			while(end.endsWith("0")) end = end.substring(0, end.length() - 1);
+			return parts[0] + '.' + end;
+		}
+		return parts[0] + '.' + parts[1];
+	}
 }

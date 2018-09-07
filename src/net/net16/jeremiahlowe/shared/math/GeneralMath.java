@@ -8,33 +8,6 @@ public class GeneralMath {
 	
 	private static final Random rng = new Random();
 	
-	//Clamps the value between a minium and maximum value
-	public static final float clamp(float v, float min, float max) {
-		if (v < min)
-			return min;
-		if (v > max)
-			return max;
-		return v;
-	}
-	//Returns the 1, 0, -1 identity of a vector
-	public static final Vector identity(Vector of) {
-		Vector out = new Vector(0, 0, 0);
-		if (of.x != 0)
-			out.x = of.x > 0 ? 1 : -1;
-		if (of.y != 0)
-			out.y = of.y > 0 ? 1 : -1;
-		if (of.z != 0)
-			out.z = of.z > 0 ? 1 : -1;
-		return out;
-	}
-	//Negates a vector
-	public static final Vector negate(Vector of) {
-		Vector out = new Vector();
-		out.x = of.x * -1;
-		out.y = of.y * -1;
-		out.z = of.z * -1;
-		return out;
-	}
 	//Gets the square root of a float
 	public static final float sqrt(float of) {
 		return (float) java.lang.Math.sqrt(of);
@@ -47,143 +20,11 @@ public class GeneralMath {
 	public static final float min(float a, float b) {
 		return a < b ? a : b;
 	}
-	//Gets the maximum positions of 2 vectors
-	public static final Vector max(Vector a, Vector b) {
-		Vector o = new Vector();
-		o.x = max(a.x, b.x);
-		o.y = max(a.y, b.y);
-		o.z = max(a.z, b.z);
-		return o;
-	}
-	//Gets the minimum positions of 2 vectors
-	public static final Vector min(Vector a, Vector b) {
-		Vector o = new Vector();
-		o.x = min(a.x, b.x);
-		o.y = min(a.y, b.y);
-		o.z = min(a.z, b.z);
-		return o;
-	}
-	//Limits the positions of a pvector to a minimum and maximum vector
-	public static final Vector clamp(Vector p, Vector min, Vector max) {
-		Vector o = new Vector();
-		o.x = clamp(p.x, min.x, max.x);
-		o.y = clamp(p.y, min.y, max.y);
-		o.z = clamp(p.z, min.z, max.z);
-		return o;
-	}
-	//Checks if a point is inside of a rectange
-	public static final boolean inside(Vector pos, Vector start, Vector end) {
-		Vector max = new Vector(max(start.x, end.x), max(start.y, end.y));
-		Vector min = new Vector(min(start.x, end.x), min(start.y, end.y));
-		if (pos.x >= min.x && pos.x <= max.x)
-			if (pos.y >= min.y && pos.y <= max.y)
-				return true;
-		return false;
-	}
 	//Wraps an integer around a maximum value
 	public static final int wrap(int val, int max) {
 		while (val >= max)
 			val -= max;
 		return val;
-	}
-	//Gets the slope between two vectors
-	public static final float slope(Vector v1, Vector v2) {
-		float x = v2.x - v1.x, y = v2.y - v1.y;
-		if (x == 0) {
-			if (y > 0)
-				return Float.POSITIVE_INFINITY;
-			else
-				return Float.NEGATIVE_INFINITY;
-		}
-		return y / x;
-	}
-	//Checks if a point is inside a polygon (defined by its verticies
-	//This will work on any convex polygon, however is untested on concave polygons
-	public static final boolean insidePolygon(Vector test, Vector... ve) {
-		if (ve.length < 3)
-			throw new RuntimeException("Polygon must have 3 or more verticies!");
-		float a = 0, ta = polygonArea(ve);
-		for (int i = 0; i < ve.length; i++)
-			a += polygonArea(ve[i], test, ve[wrap(i + 1, ve.length)]);
-		return a == ta;
-	}
-	//Checks to see how far a point is from a polygon
-	public static final float distFromPolygon(Vector test, Vector... ve) {
-		return sqrt(dist2FromPolygon(test, ve));
-	}
-	//Checks to see how far a point is from a polygon, returns the dist^2
-	public static final float dist2FromPolygon(Vector test, Vector... ve) {
-		if (ve.length < 3)
-			throw new RuntimeException("Polygon must have 3 or more verticies!");
-		int cv1 = -1, cv2 = -1;
-		float md = Float.MAX_VALUE, md2 = Float.MAX_VALUE;
-		for (int i = 0; i < ve.length; i++) {
-			float d2 = dist2(test, ve[i]);
-			if (d2 < md) {
-				md = d2;
-				cv1 = i;
-			}
-		}
-		for (int i = 0; i < ve.length; i++) {
-			float d2 = dist2(test, ve[i]);
-			if (cv1 == i)
-				continue;
-			if (d2 < md2) {
-				md2 = d2;
-				cv2 = i;
-			}
-		}
-		if (cv1 < 0 || cv2 < 0)
-			throw new RuntimeException(
-					String.format("What the literal fuck happened? (cv1 < 0 || cv2 < 0) cv1=%d cv2=%d", cv1, cv2));
-		Vector a = ve[cv1], b = ve[cv2];
-		float mx = b.x - a.x, my = b.y - a.y;
-		Vector e;
-		if (mx == 0) {
-			float m = mx / my;
-			float xi = a.x - m * a.y;
-			e = new Vector(test.y * m + xi, test.y);
-		} else {
-			float m = my / mx;
-			float yi = a.y - m * a.x;
-			e = new Vector(test.x, test.x * m + yi);
-		}
-		e = clamp(e, min(a, b), max(a, b));
-		return dist2(test, e);
-	}
-	//Gets a polygons area using the shoelace formula (https://en.wikipedia.org/wiki/Shoelace_formula)
-	//This will work on any convex polygon, however is untested on concave polygons
-	public static final float polygonArea(Vector... ve) {
-		if (ve.length < 3)
-			throw new RuntimeException("Polygon must have 3 or more verticies!");
-		float a = 0;
-		for (int j = 1; j >= -1; j -= 2) {
-			for (int i = 0; i < ve.length; i++) {
-				int x = i, y = wrap(i + 1, ve.length);
-				if (j < 0) {
-					int t = x;
-					x = y;
-					y = t;
-				}
-				a += j * ve[x].x * ve[y].y;
-			}
-		}
-		if (a < 0)
-			a *= -0.5;
-		else
-			a *= 0.5;
-		return a;
-	}
-	//Midpoint of two pvectors
-	public static final Vector mid(Vector a, Vector b) {
-		return Vector.add(a, b).div(2);
-	}
-	//Squared distance bettwen 2 vectors
-	public static final float dist2(Vector a, Vector b) {
-		float x = b.x - a.x, y = b.y - a.y;
-		x *= x;
-		y *= y;
-		return x + y;
 	}
 	public static final float random() {
 		return random(1);
@@ -206,5 +47,57 @@ public class GeneralMath {
 		while(angle >= TWO_PI)
 			angle -= TWO_PI;
 		return angle;
+	}
+	public static final boolean between(long max, long min, long val){
+		if(val >= max || val <= min) return false;
+		else return true;
+	}
+	public static final boolean between(int max, int min, int val){
+		if(val >= max || val <= min) return false;
+		else return true;
+	}
+	public static final boolean between(float max, float min, float val){
+		if(val >= max || val <= min) return false;
+		else return true;
+	}
+	public static final boolean between(double max, double min, double val){
+		if(val >= max || val <= min) return false;
+		else return true;
+	}
+	public static double clamp(double min, double max, double val){
+		if(val > max) return max;
+		else if(val < min) return min;
+		else return val;
+	}
+	public static long clamp(long min, long max, long val){
+		if(val > max) return max;
+		else if(val < min) return min;
+		else return val;
+	}
+	public static float clamp(float min, float max, float val){
+		if(val > max) return max;
+		else if(val < min) return min;
+		else return val;
+	}
+	public static int clamp(int min, int max, int val){
+		if(val > max) return max;
+		else if(val < min) return min;
+		else return val;
+	}
+	public static final boolean betweenOrEqual(double max, double min, double val){
+		if(val > max || val < min) return false;
+		else return true;
+	}
+	public static final boolean betweenOrEqual(float max, float min, float val){
+		if(val > max || val < min) return false;
+		else return true;
+	}
+	public static final boolean betweenOrEqual(int max, int min, int val){
+		if(val > max || val < min) return false;
+		else return true;
+	}
+	public static final boolean betweenOrEqual(long max, long min, long val){
+		if(val > max || val < min) return false;
+		else return true;
 	}
 }

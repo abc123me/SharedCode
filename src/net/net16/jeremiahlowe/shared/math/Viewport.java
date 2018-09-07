@@ -70,4 +70,15 @@ public class Viewport {
 			out[i] = transform(ve[i], screen);
 		return out;
 	}
+	public Viewport translate(Vector by) {
+		x += by.x;
+		y += by.y;
+		return this;
+	}
+	public Vector range() {
+		return new Vector(y - h / 2, y + h / 2);
+	}
+	public Vector domain() {
+		return new Vector(x - w / 2, x + w / 2);
+	}
 }
