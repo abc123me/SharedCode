@@ -81,4 +81,14 @@ public class Viewport {
 	public Vector domain() {
 		return new Vector(x - w / 2, x + w / 2);
 	}
+	public float absHeight() {
+		if(h < 0)
+			return h * -1;
+		return h;
+	}
+	public float absWidth() {
+		if(w < 0)
+			return w * -1;
+		return w;
+	}
 }
