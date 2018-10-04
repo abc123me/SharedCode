@@ -189,4 +189,9 @@ public class Vector {
 		z += by.z;
 		return this;
 	}
+	
+	@Override
+	public String toString() {
+		return "Vector: [" + x + ", " + y + ", " + z + "]";
+	}
 }
