@@ -189,6 +189,12 @@ public class Vector {
 		z += by.z;
 		return this;
 	}
+	public Vector translate(float by) {
+		x += by;
+		y += by;
+		z += by;
+		return this;
+	}
 	
 	@Override
 	public String toString() {
