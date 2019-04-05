@@ -200,4 +200,9 @@ public class Vector {
 	public String toString() {
 		return "Vector: [" + x + ", " + y + ", " + z + "]";
 	}
+	public Vector abs() {
+		x = x < 0 ? -x : x;
+		y = y < 0 ? -y : y;
+		return this;
+	}
 }

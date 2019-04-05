@@ -60,4 +60,16 @@ public class TextUtility {
 		}
 		return parts[0] + '.' + parts[1];
 	}
+	public final static String secsToStr(int cs) {
+		int h = 0, m = 0, s = 0;
+		h = cs / 3600;
+		m = (cs % 3600) / 60;
+		s = cs % 60;
+		String out = "";
+		if(cs >= 3600)
+			out += String.format("%d:", h);
+		out += String.format("%02d:", m);
+		out += String.format("%02d", s);
+		return out;
+	}
 }
