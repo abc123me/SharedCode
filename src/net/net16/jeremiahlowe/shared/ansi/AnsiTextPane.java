@@ -2,50 +2,157 @@ package net.net16.jeremiahlowe.shared.ansi;
 
 import javax.swing.*;
 import javax.swing.text.*;
-
-import java.awt.Color;
-import java.util.ArrayList;
+import java.awt.*;
 
 public class AnsiTextPane extends JTextPane{
-	private static final long serialVersionUID = -7558428341856246570L;
+	public static void main(String[] args) {
+		JFrame f = new JFrame();
+		f.setBounds(800, 100, 500, 300);
+		JScrollPane sp = new JScrollPane();
+		AnsiTextPane pane = new AnsiTextPane();
+		f.setContentPane(sp);
+		for(int j = 0; j < 10; j++)
+			for(int i = 0; i < 8; i++) 
+				pane.append(ANSI_ESCAPE + "[" + j + ";3" + i + "m[" + i + ", " + j + "]: Hello world!" + ANSI_CLEAR + "\n");
+		pane.append(ANSI_ESCAPE + "[38;2;125;125;125mTEST GREY");
+		sp.setViewportView(pane);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		f.setVisible(true);
+	}
 	
-	private AnsiColor defaultForeground, defaultBackground;
-	private AnsiColor foreground, background;
-	private ArrayList<AnsiStyle> styles;
+	public static final char ANSI_ESCAPE = 0x1B;
+	public static final String ANSI_CLEAR = ANSI_ESCAPE + "[0m";
+	
+	private final static int DEFAULT_FOREGROUND = 0;
+	private final static int DEFAULT_BACKGROUND = 7;
+	
+	private static final int FORMAT_ITALIC      = 0x01;
+	private static final int FORMAT_UNDERLINE   = 0x02;
+	private static final int FORMAT_BRIGHTEN    = 0x04;
+	private static final int FORMAT_STRIKE      = 0x08;
+	private static final int FORMAT_CONCEAL     = 0x10;
+	private static final int FORMAT_DARKEN      = 0x20;
+	private static final int FORMAT_SWAP_COLORS = 0x40;
+	
+	
+	private Color[] defaultColorMap = new Color[] {
+			Color.BLACK, Color.RED, Color.GREEN, Color.ORANGE,
+			Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE, null
+	}; //Last null is for custom color
+	private Color[] darkColorMap = new Color[] {
+			Color.BLACK, Color.RED, Color.GREEN, Color.ORANGE,
+			Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE, null
+	}; //Last null is for custom color
+	private Color[] brightColorMap = new Color[] {
+			Color.GRAY, Color.RED, Color.GREEN, Color.YELLOW,
+			Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE, null
+	}; //Last null is for custom color
+	
+	private int currentForeground;
+	private int currentBackground;
+	private int formattingMask;
 	
 	public AnsiTextPane(){
 		super();
-		styles = new ArrayList<AnsiStyle>();
-		defaultForeground = AnsiColor.White;
-		defaultBackground = AnsiColor.Black;
-		foreground = defaultForeground;
-		background = defaultBackground;
-		setBackground(background.toColor());
-		setForeground(foreground.toColor());
+		resetAttributes();
 	}
 
-	public void append(String str, AnsiColor fore, AnsiColor back, AnsiStyle... styles) {
-		AttributeSet aset = Ansi.createAttributeSet(fore, back, styles);
+	public void resetAttributes() {
+		currentForeground = DEFAULT_FOREGROUND;
+		currentBackground = DEFAULT_BACKGROUND;
+		formattingMask = 0;
+	}
+	private Color[] getCurrentColorMap() {
+		if((formattingMask & FORMAT_DARKEN) != 0) return darkColorMap;
+		if((formattingMask & FORMAT_BRIGHTEN) != 0) return brightColorMap;
+		return defaultColorMap;
+	}
+	private void atb(String s) {
+		SimpleAttributeSet aset = new SimpleAttributeSet();
+		Color[] colorMap = getCurrentColorMap();
+		int fg = currentForeground, bg = currentBackground;
+		if((formattingMask & FORMAT_SWAP_COLORS) != 0) { int c = fg; fg = bg; bg = c; }
+		if((formattingMask & FORMAT_CONCEAL) != 0) fg = bg;
+		StyleConstants.setForeground(aset, colorMap[fg]);
+		StyleConstants.setBackground(aset, colorMap[bg]);
+		StyleConstants.setBold(aset, (formattingMask & FORMAT_BRIGHTEN) != 0);
+		StyleConstants.setItalic(aset, (formattingMask & FORMAT_ITALIC) != 0);
+		StyleConstants.setStrikeThrough(aset, (formattingMask & FORMAT_STRIKE) != 0);
+		StyleConstants.setUnderline(aset, (formattingMask & FORMAT_UNDERLINE) != 0);
 		int len = getDocument().getLength(); 
-		try {getDocument().insertString(len, str, aset);} 
+		try {getDocument().insertString(len, s, aset);} 
 		catch (BadLocationException e) {e.printStackTrace();}
 	}
-
-	public void appendAnsi(String s){
+	private void _format(int i) {
+		switch(i) {
+			case 1: formattingMask |= FORMAT_BRIGHTEN; break;
+			case 2: formattingMask |= FORMAT_DARKEN; break;
+			case 3: formattingMask |= FORMAT_ITALIC; break;
+			case 4: formattingMask |= FORMAT_UNDERLINE; break;
+			case 8: formattingMask |= FORMAT_CONCEAL; break;
+			case 9: formattingMask |= FORMAT_STRIKE; break;
+			case 7: formattingMask |= FORMAT_SWAP_COLORS; break;
+			case 21: formattingMask &= ~FORMAT_BRIGHTEN; break;
+			case 22: formattingMask &= ~(FORMAT_DARKEN | FORMAT_BRIGHTEN); break;
+			case 23: formattingMask &= ~FORMAT_ITALIC; break;
+			case 24: formattingMask &= ~FORMAT_UNDERLINE; break;
+			case 28: formattingMask &= ~FORMAT_CONCEAL; break;
+			case 29: formattingMask &= ~FORMAT_STRIKE; break;
+			case 27: formattingMask &= ~FORMAT_SWAP_COLORS; break;
+			default: break;
+		}
+	}
+	private int customColor(String[] parts, int index, boolean foreground) {
+		if(index + 1 >= parts.length) return 0;
+		else index++;
+		int mode = Integer.parseInt(parts[index]);
+		if(mode == 2) { // 24 bit color \e[38;2;r;g;b
+			if(index + 3 >= parts.length) return 1;
+			int r = Integer.parseInt(parts[index + 1]);
+			int g = Integer.parseInt(parts[index + 2]);
+			int b = Integer.parseInt(parts[index + 3]);
+			Color[] c = getCurrentColorMap();
+			int pos = c.length - 1;
+			c[pos] = new Color(r, g, b);
+			if(foreground) currentForeground = pos;
+			else currentBackground = pos;
+			return 4;
+		}
+		return 1;
+	}
+	private void updateFormatting(String ansi) {
+		String[] parts =  ansi.split(";");
+		for(int j = 0; j < parts.length; j++) {
+			int i = Integer.parseInt(parts[j]);
+			if(i >= 30 && i < 38) currentForeground = i - 30;
+			else if(i >= 40 && i < 48) currentBackground = i - 40;
+			else if(i > 0 && i < 10) _format(i);
+			else if(i > 20 && i < 30) _format(i);
+			else if(i == 0) resetAttributes();
+			else if(i == 39) currentForeground = DEFAULT_FOREGROUND;
+			else if(i == 49) currentBackground = DEFAULT_BACKGROUND;
+			else if(i == 38) j += customColor(parts, j, true); 
+			else if(i == 48) j += customColor(parts, j, true); 
+		}
+	}
+	@Deprecated
+	public void appendAnsi(String s) { append(s); }
+	public void append(String s){
 		boolean isAnsi = false;
 		String curAnsi = "", text = "";
 		for(int i = 0; i < s.length(); i++){
 			char c = s.charAt(i);
 			if(c == '\033' && s.charAt(i + 1) == '['){
 				isAnsi = true;
-				atb(text); text = "";
+				atb(text); 
+				text = "";
 				i++; //Skip the escape sequence and go on
 			}
 			else if(isAnsi){
 				if(c == ';' || (c >= '0' && c <= '9')) curAnsi += c;
 				else if(c == 'm'){
 					isAnsi = false;
-					updateAnsiBullshit(curAnsi);
+					updateFormatting(curAnsi);
 					curAnsi = "";
 					continue;
 				}
@@ -53,66 +160,8 @@ public class AnsiTextPane extends JTextPane{
 			}
 			else text += c;
 		}
-		atb(text); text = "";
+		atb(text);
+		text = "";
 	}
-	private void atb(String buf){
-		styles.trimToSize();
-		AnsiStyle[] styleArr = new AnsiStyle[styles.size()];
-		styles.toArray(styleArr);
-		append(buf, foreground, background, styleArr);
-	}
-	private void updateAnsiBullshit(String ansi){
-		//System.out.println("ANSI: " + ansi);
-		String[] data = ansi.split(";");
-		for(String idStr : data){
-			int id = Integer.parseInt(idStr);
-			if(Ansi.isValidColor(id)){
-				boolean isBck = (id >= 40 && id <= 47) || (id >= 100 && id <= 107);
-				if(isBck) id -= 10;
-				AnsiColor c = AnsiColor.fromID(id);
-				if(isBck) background = c;
-				else foreground = c;
-			}
-			else{
-				AnsiStyle s = AnsiStyle.fromID(id);
-				if(s != null){
-					if(s == AnsiStyle.Reset){
-						foreground = defaultForeground;
-						background = defaultBackground;
-						styles.clear();
-					}
-					else
-						styles.add(s);
-				}
-			}
-		}
-	}
-
-	public Color getANSIColor(String text) {
-		text = text.replace("\u001B[", "");
-		String[] cmds = text.split(";");
-		for(String cmd : cmds){
-			if(cmd.endsWith("m")) 
-				cmd = cmd.substring(0, cmd.length() - 1);
-			int id = Integer.parseInt(cmd);
-			if(Ansi.isValidColor(id))
-				return AnsiColor.fromID(id).toColor();
-		}
-		return Color.BLACK;
-	}
-
-	public AnsiColor getDefaultForeground() {return defaultForeground;}
-	public AnsiColor getDefaultBackground() {return defaultBackground;}
-	public void setDefaultForeground(AnsiColor defaultForeground) {
-		this.defaultForeground = defaultForeground;
-		setForeground(defaultForeground.toColor());
-	}
-	public void setDefaultBackground(AnsiColor defaultBackground) {
-		this.defaultBackground = defaultBackground;
-		setBackground(defaultBackground.toColor());
-	}
-	public AnsiColor getCurrentForeground() {return foreground;}
-	public AnsiColor getCurrentBackground() {return background;}
-	public void setCurrentForeground(AnsiColor foreground) {this.foreground = foreground;}
-	public void setCurrentBackground(AnsiColor background) {this.background = background;}
+	
 }

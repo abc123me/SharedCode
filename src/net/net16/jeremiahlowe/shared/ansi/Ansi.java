@@ -4,6 +4,7 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
+@Deprecated
 public class Ansi {
 	public static final String ESC = "\033[";
     public static final String RESET = ESC + "0m";
@@ -35,7 +36,7 @@ public class Ansi {
 			for(AnsiStyle s : styles){
 				if(s != null){
 					switch(s){
-						case Bold: StyleConstants.setBold(aset, true); break;
+						case Bright: StyleConstants.setBold(aset, true); break;
 						case Italic: StyleConstants.setItalic(aset, true); break;
 						case Strikethrough: StyleConstants.setStrikeThrough(aset, true); break;
 						case Underlined: StyleConstants.setUnderline(aset, true); break;

@@ -2,6 +2,7 @@ package net.net16.jeremiahlowe.shared.ansi;
 
 import java.awt.Color;
 
+@Deprecated
 public enum AnsiColor {
 	Black(30), Red(31), Green(32), Yellow(33), Blue(34), Purple(35), Cyan(36), White(37), 
 	BrightBlack(90), BrightRed(91), BrightGreen(92), BrightYellow(93), BrightBlue(94), BrightPurple(95), BrightCyan(96), BrightWhite(97);
@@ -29,7 +30,7 @@ public enum AnsiColor {
 			case 34: return new Color(0, 0, 125);
 			case 35: return new Color(125, 0, 125);
 			case 36: return new Color(0, 125, 125);
-			case 37: new Color(255, 255, 255);
+			case 37: return new Color(255, 255, 255);
 			case 91: return Color.RED;
 			case 92: return Color.GREEN;
 			case 93: return Color.YELLOW;
