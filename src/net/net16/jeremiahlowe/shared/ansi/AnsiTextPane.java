@@ -33,7 +33,7 @@ public class AnsiTextPane extends JTextPane{
 	private static final int FORMAT_CONCEAL     = 0x10;
 	private static final int FORMAT_DARKEN      = 0x20;
 	private static final int FORMAT_SWAP_COLORS = 0x40;
-	
+	 
 	
 	private Color[] defaultColorMap = new Color[] {
 			Color.BLACK, Color.RED, Color.GREEN, Color.ORANGE,
@@ -54,6 +54,11 @@ public class AnsiTextPane extends JTextPane{
 	
 	public AnsiTextPane(){
 		super();
+		Container parent = getParent();
+		if(parent != null) {
+			setGlobalForeground(parent.getForeground());
+			setGlobalBackground(parent.getBackground());
+		}
 		resetAttributes();
 	}
 
@@ -62,6 +67,57 @@ public class AnsiTextPane extends JTextPane{
 		currentBackground = DEFAULT_BACKGROUND;
 		formattingMask = 0;
 	}
+	public void setGlobalBackground(Color c) { 
+		setGlobalColor(DEFAULT_BACKGROUND, c); 
+		super.setBackground(c);
+		repaint(); validate();
+	}
+	public void setGlobalForeground(Color c) { 
+		setGlobalColor(DEFAULT_FOREGROUND, c); 
+		super.setForeground(c);
+		repaint(); validate();
+	}
+	public Color getDarkBackground() { return darkColorMap[DEFAULT_BACKGROUND]; }
+	public Color getDarkForeground() { return darkColorMap[DEFAULT_FOREGROUND]; }
+	public Color getBrightBackground() { return brightColorMap[DEFAULT_BACKGROUND]; }
+	public Color getBrightForeground() { return brightColorMap[DEFAULT_FOREGROUND]; }
+	public Color getCurrentBackground() { return getCurrentColorMap()[DEFAULT_BACKGROUND]; }
+	public Color getCurrentForeground() { return getCurrentColorMap()[DEFAULT_FOREGROUND]; }
+	public void setGlobalColor(int c, Color to) {
+		if(c < 0 || c >= defaultColorMap.length)
+			throw new RuntimeException("Color at position " + c + " does not exist");
+		defaultColorMap[c] = to;
+		brightColorMap[c] = to.brighter();
+		darkColorMap[c] = to.darker();
+	}
+	
+	public void append(String s){
+		boolean isAnsi = false;
+		String curAnsi = "", text = "";
+		for(int i = 0; i < s.length(); i++){
+			char c = s.charAt(i);
+			if(c == '\033' && s.charAt(i + 1) == '['){
+				isAnsi = true;
+				atb(text); 
+				text = "";
+				i++; //Skip the escape sequence and go on
+			}
+			else if(isAnsi){
+				if(c == ';' || (c >= '0' && c <= '9')) curAnsi += c;
+				else if(c == 'm'){
+					isAnsi = false;
+					updateFormatting(curAnsi);
+					curAnsi = "";
+					continue;
+				}
+				else throw new RuntimeException("Error parsing ANSI");
+			}
+			else text += c;
+		}
+		atb(text);
+		text = "";
+	}
+	
 	private Color[] getCurrentColorMap() {
 		if((formattingMask & FORMAT_DARKEN) != 0) return darkColorMap;
 		if((formattingMask & FORMAT_BRIGHTEN) != 0) return brightColorMap;
@@ -134,34 +190,5 @@ public class AnsiTextPane extends JTextPane{
 			else if(i == 38) j += customColor(parts, j, true); 
 			else if(i == 48) j += customColor(parts, j, true); 
 		}
-	}
-	@Deprecated
-	public void appendAnsi(String s) { append(s); }
-	public void append(String s){
-		boolean isAnsi = false;
-		String curAnsi = "", text = "";
-		for(int i = 0; i < s.length(); i++){
-			char c = s.charAt(i);
-			if(c == '\033' && s.charAt(i + 1) == '['){
-				isAnsi = true;
-				atb(text); 
-				text = "";
-				i++; //Skip the escape sequence and go on
-			}
-			else if(isAnsi){
-				if(c == ';' || (c >= '0' && c <= '9')) curAnsi += c;
-				else if(c == 'm'){
-					isAnsi = false;
-					updateFormatting(curAnsi);
-					curAnsi = "";
-					continue;
-				}
-				else throw new RuntimeException("Error parsing ANSI");
-			}
-			else text += c;
-		}
-		atb(text);
-		text = "";
-	}
-	
+	}	
 }
