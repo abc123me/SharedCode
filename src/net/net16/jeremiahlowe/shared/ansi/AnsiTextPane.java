@@ -23,8 +23,8 @@ public class AnsiTextPane extends JTextPane{
 	public static final char ANSI_ESCAPE = 0x1B;
 	public static final String ANSI_CLEAR = ANSI_ESCAPE + "[0m";
 	
-	private final static int DEFAULT_FOREGROUND = 0;
-	private final static int DEFAULT_BACKGROUND = 7;
+	private static final int DEFAULT_FOREGROUND = 0;
+	private static final int DEFAULT_BACKGROUND = 7;
 	
 	private static final int FORMAT_ITALIC      = 0x01;
 	private static final int FORMAT_UNDERLINE   = 0x02;
@@ -48,6 +48,8 @@ public class AnsiTextPane extends JTextPane{
 			Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE, null
 	}; //Last null is for custom color
 	
+	private int slowCaretRate = -1;
+	private int fastCaretRate = -1;
 	private int currentForeground;
 	private int currentBackground;
 	private int formattingMask;
@@ -58,6 +60,13 @@ public class AnsiTextPane extends JTextPane{
 		if(parent != null) {
 			setGlobalForeground(parent.getForeground());
 			setGlobalBackground(parent.getBackground());
+		}
+		if(slowCaretRate < 1 || fastCaretRate < 1) {
+			int rate = 100;
+			if(getCaret() != null)
+				rate = getCaret().getBlinkRate();
+			slowCaretRate = rate;
+			fastCaretRate = rate / 2;
 		}
 		resetAttributes();
 	}
@@ -139,24 +148,32 @@ public class AnsiTextPane extends JTextPane{
 		try {getDocument().insertString(len, s, aset);} 
 		catch (BadLocationException e) {e.printStackTrace();}
 	}
-	private void _format(int i) {
+	private void handleSpecial(int i) {
+		float caretSpeed = -1;
 		switch(i) {
+			//Normal flags
 			case 1: formattingMask |= FORMAT_BRIGHTEN; break;
 			case 2: formattingMask |= FORMAT_DARKEN; break;
 			case 3: formattingMask |= FORMAT_ITALIC; break;
 			case 4: formattingMask |= FORMAT_UNDERLINE; break;
+			case 5: caretSpeed = slowCaretRate; break;
+			case 6: caretSpeed = fastCaretRate; break;
+			case 7: formattingMask |= FORMAT_SWAP_COLORS; break;
 			case 8: formattingMask |= FORMAT_CONCEAL; break;
 			case 9: formattingMask |= FORMAT_STRIKE; break;
-			case 7: formattingMask |= FORMAT_SWAP_COLORS; break;
+			// Disable flags
 			case 21: formattingMask &= ~FORMAT_BRIGHTEN; break;
 			case 22: formattingMask &= ~(FORMAT_DARKEN | FORMAT_BRIGHTEN); break;
 			case 23: formattingMask &= ~FORMAT_ITALIC; break;
 			case 24: formattingMask &= ~FORMAT_UNDERLINE; break;
+			case 25: caretSpeed = 0; break;
 			case 28: formattingMask &= ~FORMAT_CONCEAL; break;
 			case 29: formattingMask &= ~FORMAT_STRIKE; break;
 			case 27: formattingMask &= ~FORMAT_SWAP_COLORS; break;
 			default: break;
 		}
+		if(caretSpeed >= 0 && getCaret() != null)
+			getCaret().setBlinkRate(Math.round(caretSpeed));
 	}
 	private int customColor(String[] parts, int index, boolean foreground) {
 		if(index + 1 >= parts.length) return 0;
@@ -182,8 +199,8 @@ public class AnsiTextPane extends JTextPane{
 			int i = Integer.parseInt(parts[j]);
 			if(i >= 30 && i < 38) currentForeground = i - 30;
 			else if(i >= 40 && i < 48) currentBackground = i - 40;
-			else if(i > 0 && i < 10) _format(i);
-			else if(i > 20 && i < 30) _format(i);
+			else if(i > 0 && i < 10) handleSpecial(i);
+			else if(i > 20 && i < 30) handleSpecial(i);
 			else if(i == 0) resetAttributes();
 			else if(i == 39) currentForeground = DEFAULT_FOREGROUND;
 			else if(i == 49) currentBackground = DEFAULT_BACKGROUND;
