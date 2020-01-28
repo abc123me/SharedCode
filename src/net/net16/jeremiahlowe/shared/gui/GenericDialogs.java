@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 
 import javax.swing.*;
 
+import net.net16.jeremiahlowe.shared.ETimeUnit;
 import net.net16.jeremiahlowe.shared.SwingUtility;
 
 public class GenericDialogs {
@@ -101,14 +102,6 @@ public class GenericDialogs {
 		} catch (InterruptedException e) {}
 		jf.dispose();
 		return out;
-	}
-}
-enum ETimeUnit{
-	Milliseconds(1), Seconds(1000), Minutes(60000), Hours(3600000), Days(86400000);
-	
-	public final long milliseconds;
-	private ETimeUnit(long ms) {
-		milliseconds = ms;
 	}
 }
 class JButtonTracked extends JButton implements ActionListener {
