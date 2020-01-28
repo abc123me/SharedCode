@@ -34,7 +34,7 @@ public class AnsiTextPane extends JTextPane {
 	private int fastCaretRate = -1;
 	private int currentForeground;
 	private int currentBackground;
-	private int formattingMask;
+	private AnsiStyle style = new AnsiStyle();
 	private boolean autoscrolls = false;
 	
 	public AnsiTextPane(){
@@ -57,7 +57,7 @@ public class AnsiTextPane extends JTextPane {
 	public void resetAttributes() {
 		currentForeground = DEFAULT_FOREGROUND;
 		currentBackground = DEFAULT_BACKGROUND;
-		formattingMask = 0;
+		style.reset();
 	}
 	public void setGlobalBackground(Color c) { 
 		setGlobalColor(DEFAULT_BACKGROUND, c, true); 
@@ -136,22 +136,22 @@ public class AnsiTextPane extends JTextPane {
 		setCaretPosition(getDocument().getEndPosition().getOffset() - 1);
 	}
 	private Color[] getCurrentColorMap() {
-		if((formattingMask & FORMAT_DARKEN) != 0) return darkColorMap;
-		if((formattingMask & FORMAT_BRIGHTEN) != 0) return brightColorMap;
+		if(style.darken()) return darkColorMap;
+		if(style.brighten()) return brightColorMap;
 		return defaultColorMap;
 	}
 	private void atb(String s) {
 		SimpleAttributeSet aset = new SimpleAttributeSet();
 		Color[] colorMap = getCurrentColorMap();
 		int fg = currentForeground, bg = currentBackground;
-		if((formattingMask & FORMAT_SWAP_COLORS) != 0) { int c = fg; fg = bg; bg = c; }
-		if((formattingMask & FORMAT_CONCEAL) != 0) fg = bg;
+		if(style.swap()) { int c = fg; fg = bg; bg = c; }
+		if(style.conceal()) fg = bg;
 		StyleConstants.setForeground(aset, colorMap[fg]);
 		StyleConstants.setBackground(aset, colorMap[bg]);
-		StyleConstants.setBold(aset, (formattingMask & FORMAT_BRIGHTEN) != 0);
-		StyleConstants.setItalic(aset, (formattingMask & FORMAT_ITALIC) != 0);
-		StyleConstants.setStrikeThrough(aset, (formattingMask & FORMAT_STRIKE) != 0);
-		StyleConstants.setUnderline(aset, (formattingMask & FORMAT_UNDERLINE) != 0);
+		StyleConstants.setBold(aset, style.brighten());
+		StyleConstants.setItalic(aset, style.darken());
+		StyleConstants.setStrikeThrough(aset, style.strike());
+		StyleConstants.setUnderline(aset, style.underline());
 		int len = getDocument().getLength(); 
 		try { getDocument().insertString(len, s, aset); } 
 		catch (BadLocationException e) {e.printStackTrace();}
@@ -159,13 +159,15 @@ public class AnsiTextPane extends JTextPane {
 	}
 	private void handleSpecial(int i) {
 		float caretSpeed = -1;
-		switch(i) {
-			//Normal flags
-			case 5: caretSpeed = slowCaretRate; break;
-			case 6: caretSpeed = fastCaretRate; break;
-			// Disable flags
-			case 25: caretSpeed = 0; break;
-			default: break;
+		if(!style.interpretAnsiCode(i)) {
+			switch(i) {
+				//Normal flags
+				case 5: caretSpeed = slowCaretRate; break;
+				case 6: caretSpeed = fastCaretRate; break;
+				// Disable flags
+				case 25: caretSpeed = 0; break;
+				default: break;
+			}
 		}
 		Caret c = getCaret();
 		if(caretSpeed >= 0 && c != null) {
