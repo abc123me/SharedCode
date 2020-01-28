@@ -13,11 +13,10 @@ import net.net16.jeremiahlowe.shared.SwingUtility;
 
 public class GenericDialogs {
 	public static void main(String[] args) {
-		/*InetAddress ip = showHostnameDialog();
-		if(ip == null) System.out.println("No IP!");
-		else System.out.println(ip);*/
-		long l = showDelayDialogMS(10, 100);
-		System.out.println(l);
+		char[] pwd = showPasswordField();
+		for(int i = 0; i < pwd.length; i++)
+			System.out.print(pwd[i]);
+		System.out.println();
 	}
 	
 	private static JFrame initJF(String t, int w, int h) {
@@ -26,6 +25,33 @@ public class GenericDialogs {
 		jf.setSize(w, h);
 		SwingUtility.centerJFrame(jf);
 		return jf;
+	}
+	public static char[] showPasswordField() {
+		JFrame jf = initJF("Password?", 300, 150);
+		jf.setLayout(new BorderLayout());
+		Box panel = Box.createVerticalBox();
+		panel.add(Box.createVerticalGlue());
+		panel.add(new JLabel("Password:"));
+		JPasswordField passField = new JPasswordField();
+		panel.add(passField);
+		jf.add(panel, BorderLayout.NORTH);
+		JButtonTracked btnCancel = new JButtonTracked("Cancel");
+		JButtonTracked btnSubmit = new JButtonTracked("OK");
+		Box controlBx = Box.createHorizontalBox();
+		controlBx.add(btnSubmit);
+		controlBx.add(btnCancel);
+		jf.add(controlBx, BorderLayout.SOUTH);
+		jf.setVisible(true);
+		try {
+			while(true) {
+				if(btnSubmit.wasPressed()) {
+					char[] pass = passField.getPassword();
+					if(pass != null && pass.length > 0)
+						return pass;
+				} else if(btnCancel.wasPressed()) return null;
+				Thread.sleep(50);
+			}
+		} catch (InterruptedException e) { return null; }
 	}
 	public static InetAddress showHostnameDialog() {
 		JFrame jf = initJF("Please enter a hostname/IP!", 300, 200);
