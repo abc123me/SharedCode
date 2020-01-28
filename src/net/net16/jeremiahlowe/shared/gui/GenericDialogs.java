@@ -42,16 +42,17 @@ public class GenericDialogs {
 		controlBx.add(btnCancel);
 		jf.add(controlBx, BorderLayout.SOUTH);
 		jf.setVisible(true);
+		char[] out = null;
 		try {
-			while(true) {
-				if(btnSubmit.wasPressed()) {
-					char[] pass = passField.getPassword();
-					if(pass != null && pass.length > 0)
-						return pass;
-				} else if(btnCancel.wasPressed()) return null;
+			while(out == null) {
+				if(!jf.isDisplayable()) { return null; }
+				if(btnSubmit.wasPressed()) out = passField.getPassword();
+				else if(btnCancel.wasPressed()) break;
 				Thread.sleep(50);
 			}
-		} catch (InterruptedException e) { return null; }
+		} catch (InterruptedException e) {}
+		jf.dispose();
+		return out;
 	}
 	public static InetAddress showHostnameDialog() {
 		JFrame jf = initJF("Please enter a hostname/IP!", 300, 200);
@@ -71,6 +72,7 @@ public class GenericDialogs {
 		InetAddress addr = null;
 		try {
 			while(addr == null) {
+				if(!jf.isDisplayable()) { return null; }
 				if(btnSubmit.wasPressed()) {
 					try { addr = InetAddress.getByName(field.getText()); }
 					catch (UnknownHostException e) { JOptionPane.showMessageDialog(jf, "Unknown host, try again!"); }
@@ -104,7 +106,8 @@ public class GenericDialogs {
 		jf.setVisible(true);
 		Long out = null;
 		try {
-			while(out == null && jf.isDisplayable()) {
+			while(out == null) {
+				if(!jf.isDisplayable()) { return null; }
 				if(btnSubmit.wasPressed()) {
 					Integer spr = (Integer) amountSpinner.getValue();
 					if(spr == null)	continue;
