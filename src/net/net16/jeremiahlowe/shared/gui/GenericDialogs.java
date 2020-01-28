@@ -33,7 +33,12 @@ public class GenericDialogs {
 		panel.add(Box.createVerticalGlue());
 		panel.add(new JLabel("Password:"));
 		JPasswordField passField = new JPasswordField();
+		JCheckBox showPassordChkBox = new JCheckBox("Show password");
+		showPassordChkBox.addActionListener((ActionEvent e) -> {
+			passField.setEchoChar(showPassordChkBox.isSelected() ? '\u0000' : '*');
+		});
 		panel.add(passField);
+		panel.add(showPassordChkBox);
 		jf.add(panel, BorderLayout.NORTH);
 		JButtonTracked btnCancel = new JButtonTracked("Cancel");
 		JButtonTracked btnSubmit = new JButtonTracked("OK");
