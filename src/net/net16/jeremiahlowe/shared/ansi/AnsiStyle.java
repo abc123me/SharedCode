@@ -42,7 +42,7 @@ public class AnsiStyle{
 	public AnsiStyle(int val) { formattingMask = val; }
 	public AnsiStyle(AnsiStyle val) { this(val.formattingMask); }
 	
-	public void interpretAnsiCode(int code) {
+	public boolean interpretAnsiCode(int code) {
 		switch(code) {
 			//Normal flags
 			case ANSI_RESET:       formattingMask = 0; break;
@@ -61,8 +61,9 @@ public class AnsiStyle{
 			case ANSI_N_SWAP:      formattingMask &= N_FORMAT_SWAP_COLORS; break;
 			case ANSI_N_CONCEAL:   formattingMask &= N_FORMAT_CONCEAL; break;
 			case ANSI_N_STRIKE:    formattingMask &= N_FORMAT_STRIKE; break;
-			default: break;
+			default: return false;
 		}
+		return true;
 	}
 	
 	public void reset() { formattingMask = 0; }

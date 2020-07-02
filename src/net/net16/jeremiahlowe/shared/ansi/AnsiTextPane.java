@@ -4,42 +4,7 @@ import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
 
-public class AnsiTextPane extends JTextPane{
-	/*public static void main(String[] args) {
-		JFrame f = new JFrame();
-		f.setBounds(0, 0, 1920, 1080);
-		JScrollPane sp = new JScrollPane();
-		AnsiTextPane pane = new AnsiTextPane();
-		f.setContentPane(sp);
-		//for(int j = 0; j < 10; j++)
-		//	for(int i = 0; i < 8; i++) 
-		//		pane.append(ANSI_ESCAPE + "[" + j + ";3" + i + "m[" + i + ", " + j + "]: Hello world!" + ANSI_CLEAR + "\n");
-		sp.setViewportView(pane);
-		pane.setAutoscrolls(true);
-		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		f.setVisible(true);
-		int xi = pane.getFontMetrics(pane.getFont()).stringWidth(" ");
-		int yi = pane.getFontMetrics(pane.getFont()).getHeight();
-		float w = pane.getWidth() - 2 * xi, h = pane.getHeight() - 2 * yi;
-		float asp = w / h; asp /= 2;
-		float a = 3;
-		pane.resetAttributes();
-		for(int y = 0; y < h; y += yi) {
-			for(int x = 0; x < w; x += xi) {
-				int r = 255 / 2 + ((int)Math.round(255 * Math.sqrt(Math.cos((y / h) * 2 * a * asp * Math.PI)))) / 2;
-				int g = (int)Math.round(255 * Math.sqrt(Math.sin(((x * y) / (w * h)) * 2 * a * asp * Math.PI)));
-				int b = 255 / 2 + ((int)Math.round(255 * Math.sqrt(Math.cos((x / w) * 2 * a * Math.PI)))) / 2;
-				String astr = "[48;2;" + r + ';' + g + ';' + b + "m ";
-				//System.out.println(astr);
-				pane.append(ANSI_ESCAPE + astr); 
-			}
-			pane.append("\n");
-		}
-	}*/
-	
-	public static final String ANSI_ESCAPE = "\u001B[";
-	public static final String ANSI_CLEAR = ANSI_ESCAPE + "0m";
-	
+public class AnsiTextPane extends JTextPane {
 	private static final int DEFAULT_FOREGROUND = 0;
 	private static final int DEFAULT_BACKGROUND = 7;
 	
@@ -69,7 +34,7 @@ public class AnsiTextPane extends JTextPane{
 	private int fastCaretRate = -1;
 	private int currentForeground;
 	private int currentBackground;
-	private int formattingMask;
+	private AnsiStyle style = new AnsiStyle();
 	private boolean autoscrolls = false;
 	
 	public AnsiTextPane(){
@@ -92,7 +57,7 @@ public class AnsiTextPane extends JTextPane{
 	public void resetAttributes() {
 		currentForeground = DEFAULT_FOREGROUND;
 		currentBackground = DEFAULT_BACKGROUND;
-		formattingMask = 0;
+		style.reset();
 	}
 	public void setGlobalBackground(Color c) { 
 		setGlobalColor(DEFAULT_BACKGROUND, c, true); 
@@ -104,7 +69,12 @@ public class AnsiTextPane extends JTextPane{
 		super.setForeground(c);
 		repaint(); validate();
 	}
-	@Override public void setAutoscrolls(boolean s) { autoscrolls = s; }
+	@Override public void setAutoscrolls(boolean s) { 
+		autoscrolls = s;
+		Caret caret = getCaret();
+		if(caret instanceof DefaultCaret)
+			((DefaultCaret) caret).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+	}
 	@Override public boolean getAutoscrolls() { return autoscrolls; }
 	public Color getDarkBackground() { return darkColorMap[DEFAULT_BACKGROUND]; }
 	public Color getDarkForeground() { return darkColorMap[DEFAULT_FOREGROUND]; }
@@ -124,8 +94,7 @@ public class AnsiTextPane extends JTextPane{
 			darkColorMap[pos] = color;
 		}
 	}
-	
-	public void append(String s){
+	public void append(String s) {
 		boolean isAnsi = false;
 		String curAnsi = "", text = "";
 		for(int i = 0; i < s.length(); i++){
@@ -137,7 +106,8 @@ public class AnsiTextPane extends JTextPane{
 				i++; //Skip the escape sequence and go on
 			}
 			else if(isAnsi){
-				if(c == ';' || (c >= '0' && c <= '9')) curAnsi += c;
+				if(c == ';' || (c >= '0' && c <= '9'))
+					curAnsi += c;
 				else if(c == 'm'){
 					isAnsi = false;
 					updateFormatting(curAnsi);
@@ -149,8 +119,8 @@ public class AnsiTextPane extends JTextPane{
 			else text += c;
 		}
 		atb(text);
-		text = "";
 	}
+	
 	@Override public void setText(String txt) {
 		clear();
 		append(txt); //No way to "set" the text all at once since the style must be dynamically changed based on the text
@@ -162,37 +132,42 @@ public class AnsiTextPane extends JTextPane{
 		super.setText(txt);
 	}
 	
+	private void autoscroll() {
+		setCaretPosition(getDocument().getEndPosition().getOffset() - 1);
+	}
 	private Color[] getCurrentColorMap() {
-		if((formattingMask & FORMAT_DARKEN) != 0) return darkColorMap;
-		if((formattingMask & FORMAT_BRIGHTEN) != 0) return brightColorMap;
+		if(style.darken()) return darkColorMap;
+		if(style.brighten()) return brightColorMap;
 		return defaultColorMap;
 	}
 	private void atb(String s) {
 		SimpleAttributeSet aset = new SimpleAttributeSet();
 		Color[] colorMap = getCurrentColorMap();
 		int fg = currentForeground, bg = currentBackground;
-		if((formattingMask & FORMAT_SWAP_COLORS) != 0) { int c = fg; fg = bg; bg = c; }
-		if((formattingMask & FORMAT_CONCEAL) != 0) fg = bg;
+		if(style.swap()) { int c = fg; fg = bg; bg = c; }
+		if(style.conceal()) fg = bg;
 		StyleConstants.setForeground(aset, colorMap[fg]);
 		StyleConstants.setBackground(aset, colorMap[bg]);
-		StyleConstants.setBold(aset, (formattingMask & FORMAT_BRIGHTEN) != 0);
-		StyleConstants.setItalic(aset, (formattingMask & FORMAT_ITALIC) != 0);
-		StyleConstants.setStrikeThrough(aset, (formattingMask & FORMAT_STRIKE) != 0);
-		StyleConstants.setUnderline(aset, (formattingMask & FORMAT_UNDERLINE) != 0);
+		StyleConstants.setBold(aset, style.brighten());
+		StyleConstants.setItalic(aset, style.darken());
+		StyleConstants.setStrikeThrough(aset, style.strike());
+		StyleConstants.setUnderline(aset, style.underline());
 		int len = getDocument().getLength(); 
-		try {getDocument().insertString(len, s, aset);} 
+		try { getDocument().insertString(len, s, aset); } 
 		catch (BadLocationException e) {e.printStackTrace();}
-		if(autoscrolls) setCaretPosition(getDocument().getLength());
+		if(autoscrolls) autoscroll();
 	}
 	private void handleSpecial(int i) {
 		float caretSpeed = -1;
-		switch(i) {
-			//Normal flags
-			case 5: caretSpeed = slowCaretRate; break;
-			case 6: caretSpeed = fastCaretRate; break;
-			// Disable flags
-			case 25: caretSpeed = 0; break;
-			default: break;
+		if(!style.interpretAnsiCode(i)) {
+			switch(i) {
+				//Normal flags
+				case 5: caretSpeed = slowCaretRate; break;
+				case 6: caretSpeed = fastCaretRate; break;
+				// Disable flags
+				case 25: caretSpeed = 0; break;
+				default: break;
+			}
 		}
 		Caret c = getCaret();
 		if(caretSpeed >= 0 && c != null) {

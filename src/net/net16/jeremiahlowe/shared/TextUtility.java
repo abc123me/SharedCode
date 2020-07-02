@@ -72,4 +72,19 @@ public class TextUtility {
 		out += String.format("%02d", s);
 		return out;
 	}
+	public final static String combineStringArray(String[] in, int start, int stop) { 
+		return combineStringArray(in, start, stop, "", "");
+	}
+	public final static String combineStringArray(String[] in, int start, int stop, String sep) { 
+		return combineStringArray(in, start, stop, sep, "");
+	}
+	public final static String combineStringArray(String[] in, int start, int stop, String sep, String end) {
+		String out = "";
+		if(stop < 0) stop = in.length;
+		for (int i = start; i < stop; i++)
+			out += in[i] + sep;
+		if(sep == end) return out;
+		out = out.substring(0, out.length() - sep.length());
+		return out + end;
+	}
 }
