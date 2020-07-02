@@ -64,18 +64,18 @@ public class SwingUtility {
 			case 0x1: segs = 0b00000110; break;
 			case 0x2: segs = 0b01011011; break;
 			case 0x3: segs = 0b01001111; break;
-			case 0x4: segs = 0b00100110; break;
+			case 0x4: segs = 0b01100110; break;
 			case 0x5: segs = 0b01101101; break;
 			case 0x6: segs = 0b01111101; break;
 			case 0x7: segs = 0b00000111; break;
 			case 0x8: segs = 0b01111111; break;
 			case 0x9: segs = 0b01101111; break;
-			case 0xA: segs = 0b01110110; break;
+			case 0xA: segs = 0b01110111; break;
 			case 0xB: segs = 0b01111100; break;
 			case 0xC: segs = 0b00111001; break;
 			case 0xD: segs = 0b01011110; break;
 			case 0xE: segs = 0b01111001; break;
-			case 0xF: segs = 0b01110011; break;
+			case 0xF: segs = 0b01110001; break;
 		}
 		g.setColor(bc);
 		g.fillRect(x, y, w, h);
