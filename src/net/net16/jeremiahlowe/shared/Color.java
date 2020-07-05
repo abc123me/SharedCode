@@ -9,6 +9,7 @@ public class Color {
 	public static final Color AQUA = new Color(0, 255, 255);
 	public static final Color MAGENTA = new Color(255, 0, 255);
 	public static final Color WHITE = new Color(255, 255, 255);
+	public static final Color GRAY = new Color(127, 127, 127);
 	
 	public static final int ALPHA_OPAQUE = 0xFF;
 	public static final int ALPHA_TRANSPARENT = 0x00;
@@ -24,34 +25,29 @@ public class Color {
 	}
 	public Color(Color c) {
 		this.r = c.r; 
-		this.g= c.g;
+		this.g = c.g;
 		this.b = c.b; 
 		this.a = c.a;
+		generateARGB();
 	}
 	public Color(Color c, int a) {
 		this.r = c.r; 
-		this.g= c.g;
+		this.g = c.g;
 		this.b = c.b;
-		this.a = verifyColor(a);
+		this.a = (byte) a;
+		generateARGB();
 	}
 	public Color(int r, int g, int b) {
 		this(r, g, b, ALPHA_OPAQUE);
 	}
 	public Color(int r, int g, int b, int a) {
-		this.r = verifyColor(r);
-		this.g = verifyColor(g);
-		this.b = verifyColor(b);
-		this.a = verifyColor(a);
+		this.r = (byte) r;
+		this.g = (byte) g;
+		this.b = (byte) b;
+		this.a = (byte) a;
 		generateARGB();
 	}
 	
-	private byte verifyColor(int c) {
-		if(c < 0)
-			throw new RuntimeException("Color value (" + c + ") must be between 0 and 255!");
-		if(c > 255)
-			throw new RuntimeException("Color value (" + c + ") must be between 0 and 255!");
-		return (byte)c;
-	}
 	private void generateARGB() {
 		argb = a << 24;
 		argb += r << 16;
@@ -64,19 +60,19 @@ public class Color {
 	}
 	
 	public void r(int v) {
-		r = verifyColor(v);
+		r = (byte) v;
 		generateARGB();
 	}
 	public void g(int v) {
-		g = verifyColor(v);
+		g = (byte) v;
 		generateARGB();
 	}
 	public void b(int v) {
-		b = verifyColor(v);
+		b = (byte) v;
 		generateARGB();
 	}
 	public void a(int v) {
-		a = verifyColor(v);
+		a = (byte) v;
 		generateARGB();
 	}
 	public int r() {
@@ -102,5 +98,12 @@ public class Color {
 	}
 	public byte ab() {
 		return a;
+	}
+	
+	public java.awt.Color toAwtColor() {
+		return new java.awt.Color(r(), g(), b(), a());
+	}
+	public java.awt.Color toAwtColorNoAlpha() {
+		return new java.awt.Color(r(), g(), b());
 	}
 }
